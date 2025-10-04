@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
-import { getUserTeamMembership } from '@/lib/team-queries';
-import { ACTIVITY_WITH_RELATIONS } from '@/lib/activity-queries';
+import { getUserTeamMembership } from '@/queries/team-queries';
+import { ACTIVITY_WITH_RELATIONS } from '@/queries/activity-queries';
 
 export async function GET(
   req: NextRequest,

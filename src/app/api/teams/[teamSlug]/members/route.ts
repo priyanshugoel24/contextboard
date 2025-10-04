@@ -4,7 +4,7 @@ import { getAuthenticatedUser } from '@/lib/auth-utils';
 import { 
   getUserTeamMembership,
   getTeamMembersWithPagination 
-} from '@/lib/team-queries';
+} from '@/queries/team-queries';
 
 export async function GET(
   request: NextRequest,

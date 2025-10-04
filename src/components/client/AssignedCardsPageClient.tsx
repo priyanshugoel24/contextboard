@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AssignedCards from '@/components/AssignedCards';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BackButton from '@/components/ui/BackButton';
-import { AssignedCardsPageClientProps } from '@/interfaces/AssignedCardsPageClientProps';
+import { AssignedCardsPageClientProps } from '@/interfaces/ui-components';
 
 export default function AssignedCardsPageClient({ team }: AssignedCardsPageClientProps) {
   return (

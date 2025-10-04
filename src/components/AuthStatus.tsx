@@ -1,11 +1,11 @@
 "use client";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import { StatusService, UserStatus } from "@/services";
 
 export default function AuthStatus() {
   const { data: session, status } = useSession();
-  const [userStatus, setUserStatus] = useState<{ state: string; updatedAt: string } | null>(null);
+  const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [error, setError] = useState<string>("");
 
@@ -15,8 +15,8 @@ export default function AuthStatus() {
     setStatusLoading(true);
     setError("");
     try {
-      const response = await axios.get("/api/status");
-      setUserStatus(response.data.status);
+      const status = await StatusService.getUserStatus();
+      setUserStatus(status);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error && 'response' in error && 
         typeof error.response === 'object' && error.response !== null &&
@@ -34,11 +34,8 @@ export default function AuthStatus() {
     setStatusLoading(true);
     setError("");
     try {
-      const response = await axios.post("/api/status", {
-        state: newState
-      });
-      
-      setUserStatus(response.data.status);
+      const status = await StatusService.updateUserStatus(newState);
+      setUserStatus(status);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error && 'response' in error && 
         typeof error.response === 'object' && error.response !== null &&

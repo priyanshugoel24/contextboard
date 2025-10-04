@@ -2,9 +2,15 @@
 import React, { createContext, useContext, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { usePresenceStore } from "@/lib/store";
-import { UserStatus } from "@/interfaces/UserStatus";
-import { StatusContextType } from "@/interfaces/StatusContextType";
+import { UserStatus } from "@/interfaces/common";
 import { useAblyPresence } from "@/lib/ably/useAblyPresence";
+
+interface StatusContextType {
+  status: UserStatus;
+  onlineUsers: unknown[];
+  isConnected: boolean;
+  updateStatus: (status: UserStatus) => void;
+}
 
 const StatusContext = createContext<StatusContextType | undefined>(undefined);
 
@@ -30,7 +36,7 @@ export function StatusProvider({ children }: { children: React.ReactNode }) {
   }, [session, updateUserStatus, setCurrentStatus]);
 
   const contextValue = {
-    status: currentStatus,
+    status: currentStatus as UserStatus,
     updateStatus,
     onlineUsers,
     isConnected,

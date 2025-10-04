@@ -6,8 +6,8 @@ import { channelsConfig } from '@/config';
 import type Ably from 'ably';
 import axios from "axios";
 import { usePresenceStore } from '@/lib/store';
-import { PresenceUser } from '@/interfaces/PresenceUser';
-import { UserStatus } from '@/interfaces/UserStatus';
+import { PresenceUser } from '@/interfaces/store';
+import { UserStatus } from '@/interfaces/common';
 
 export function useAblyPresence() {
   const { data: session, status: sessionStatus } = useSession();
@@ -81,6 +81,7 @@ export function useAblyPresence() {
 
     try {
       const presenceData: AblyPresenceData = {
+        id: user.id,
         name: user.name || user.email?.split('@')[0] || "User",
         email: user.email || "",
         image: user.image,
@@ -116,6 +117,7 @@ export function useAblyPresence() {
     if (!user?.id || !channelRef.current) return;
     try {
       const presenceData: AblyPresenceData = {
+        id: user.id,
         name: user.name || user.email?.split('@')[0] || "User",
         email: user.email || "",
         image: user.image,

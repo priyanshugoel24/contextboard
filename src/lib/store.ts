@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { PresenceState } from '@/interfaces/PresenceState';
+import { PresenceState } from '@/interfaces/store';
 
 export const usePresenceStore = create<PresenceState>((set) => ({
   onlineUsers: [],

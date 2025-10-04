@@ -15,7 +15,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import { AnalyticsChartsProps } from '@/interfaces/AnalyticsChartsProps';
+import { AnalyticsChartsProps } from '@/interfaces/ui-components';
 import { ANALYTICS_CHART_COLORS } from '@/config/charts';
 
 const AnalyticsCharts = memo(function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
@@ -29,27 +29,42 @@ const AnalyticsCharts = memo(function AnalyticsCharts({ analytics }: AnalyticsCh
   }
 
   // Transform data for charts with proper type checking
-  const cardTypeData = analytics.cardTypeDistribution?.map(item => ({
-    name: String(item.type),
-    value: Number(item.count) || 0,
-  })) || [];
+  // Handle both ProjectAnalytics and TeamAnalytics
+  const cardTypeData = Array.isArray(analytics.cardTypeDistribution) 
+    ? analytics.cardTypeDistribution.map(item => ({
+        name: String(item.type),
+        value: Number(item.count) || 0,
+      }))
+    : Object.entries(analytics.cardTypeDistribution || {}).map(([key, value]) => ({
+        name: String(key),
+        value: Number(value) || 0,
+      }));
 
-  // Since TeamAnalytics doesn't have taskStatusOverview, let's create a simple task status chart
-  const taskStatusData = [
-    { name: 'Completed', value: analytics.completedTasks || 0 },
-    { name: 'Active', value: analytics.activeTasks || 0 },
-  ];
+  // Use taskStatusOverview if available (ProjectAnalytics), otherwise use direct counts (TeamAnalytics)
+  const taskStatusData = 'taskStatusOverview' in analytics
+    ? [
+        { name: 'Completed', value: analytics.taskStatusOverview?.CLOSED || 0 },
+        { name: 'Active', value: analytics.taskStatusOverview?.ACTIVE || 0 },
+      ]
+    : [
+        { name: 'Completed', value: analytics.completedTasks || 0 },
+        { name: 'Active', value: 'activeTasks' in analytics ? (analytics as { activeTasks: number }).activeTasks || 0 : 0 },
+      ];
 
   // Create weekly velocity data from the interface
   const weeklyVelocityData = analytics.weeklyVelocity?.map((week) => ({
     week: String(week.week || ''),
     completed: Number(week.completed) || 0,
+    created: Number(week.created) || 0,
   })) || [];
 
-  const projectProgressData = analytics.projectProgress?.map((project) => ({
-    name: String(project.name || ''),
-    progress: Number(project.progress) || 0,
-  })) || [];
+  // Handle projectProgress for TeamAnalytics, empty for ProjectAnalytics
+  const projectProgressData = 'projectProgress' in analytics
+    ? analytics.projectProgress?.map((project) => ({
+        name: String(project.name || ''),
+        progress: Number(project.progress) || 0,
+      })) || []
+    : [];
 
   const memberProductivityData = analytics.topContributors?.map((contributor) => ({
     name: String(contributor.userName || ''),

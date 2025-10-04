@@ -1,6 +1,6 @@
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
-import { SafeMarkdownProps } from '@/interfaces/SafeMarkdownProps';
+import { SafeMarkdownProps } from '@/interfaces/ui-components';
 
 export default async function SafeMarkdown({ content, className = '' }: SafeMarkdownProps) {
   const sanitizedHtml = DOMPurify.sanitize(await marked.parse(content));

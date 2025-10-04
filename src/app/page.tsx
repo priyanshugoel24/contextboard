@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import LoginPage from '@/components/LoginPage';
 import TeamsDisplay from '@/components/TeamsDisplay';
-import { TeamWithRelations } from '@/interfaces/TeamWithRelations';
+import { TeamWithRelations } from '@/interfaces/teams';
 import { Session } from 'next-auth';
 import { Metadata } from 'next';
 import { Navbar } from '@/components';

@@ -8,7 +8,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
-import { WeeklyVelocityChartProps } from '@/interfaces/WeeklyVelocityChartProps';
+import { WeeklyVelocityChartProps } from '@/interfaces/ui-components';
 
 export default function WeeklyVelocityChart({ data }: WeeklyVelocityChartProps) {
   return (
@@ -30,12 +30,23 @@ export default function WeeklyVelocityChart({ data }: WeeklyVelocityChartProps) 
             border: '1px solid hsl(var(--border))',
             borderRadius: '6px'
           }}
-          labelFormatter={(label) => `Week of ${label}`}
-          formatter={(value) => [`${value} tasks`, 'Completed']}
+          labelFormatter={(label) => `${label}`}
+          formatter={(value, name) => [
+            `${value} tasks`, 
+            name === 'completed' ? 'Completed' : 'Created'
+          ]}
         />
         <Line 
           type="monotone" 
           dataKey="completed" 
+          stroke="#22c55e" 
+          strokeWidth={3}
+          dot={{ fill: '#22c55e', strokeWidth: 2, r: 4 }}
+          activeDot={{ r: 6, stroke: '#22c55e', strokeWidth: 2 }}
+        />
+        <Line 
+          type="monotone" 
+          dataKey="created" 
           stroke="#3b82f6" 
           strokeWidth={3}
           dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}

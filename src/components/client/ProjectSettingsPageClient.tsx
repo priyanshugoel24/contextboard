@@ -10,8 +10,8 @@ import { Loader2, Save, Trash2 } from "lucide-react";
 import { getAblyClient } from "@/lib/ably/ably";
 import { useSession } from "next-auth/react";
 import axios from "axios";
-import { ProjectData } from "@/interfaces/ProjectData";
-import { ProjectSettingsPageClientProps } from "@/interfaces/ProjectSettingsPageClientProps";
+import { ProjectData } from "@/interfaces/projects";
+import { ProjectSettingsPageClientProps } from "@/interfaces/ui-components";
 
 export default function ProjectSettingsPageClient({ 
   project: initialProject, 

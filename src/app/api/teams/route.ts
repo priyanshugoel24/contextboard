@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { generateSlug, generateUniqueSlug } from '@/lib/slugUtil';
+import { createSlug, createUniqueSlug } from '@/utils/string';
 import { getAuthenticatedUser } from '@/lib/auth-utils';
-import { getUserTeamsWithRoles, isTeamSlugAvailable } from '@/lib/db-queries';
+import { getUserTeamsWithRoles, isTeamSlugAvailable } from '@/queries/db-queries';
 
 export async function GET(req: NextRequest) {
   try {
@@ -41,12 +41,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate a unique slug for the team
-    const baseSlug = generateSlug(name);
+    const baseSlug = createSlug(name);
     const existingTeams = await prisma.team.findMany({
       select: { slug: true }
     });
     const existingSlugs = existingTeams.map(t => t.slug);
-    const uniqueSlug = generateUniqueSlug(baseSlug, existingSlugs);
+    const uniqueSlug = createUniqueSlug(baseSlug, existingSlugs);
 
     // Check if slug is already taken (additional safety check)
     const slugAvailable = await isTeamSlugAvailable(uniqueSlug);

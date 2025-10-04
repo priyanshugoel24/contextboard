@@ -13,8 +13,8 @@ import {
 } from "@/lib/security";
 import { 
   findCardWithModifyAccess
-} from '@/lib/card-queries';
-import { findUserAccessibleProject } from '@/lib/project-queries';
+} from '@/queries/card-queries';
+import { findUserAccessibleProject } from '@/queries/project-queries';
 
 // Rate limiter: 60 requests per minute per user for updates (increased from 30)
 const rateLimiter = createRateLimiter(60 * 1000, 60);

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { fetchTeamMembers, TeamMember } from "@/services/contextCardService";
+import { ContextCardService } from "@/services/contextCard.service";
+import { TeamMember } from "@/interfaces/teams";
 
 export const useTeamMembers = (projectSlug: string, open: boolean) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -11,7 +12,7 @@ export const useTeamMembers = (projectSlug: string, open: boolean) => {
       if (!projectSlug || !open) return;
 
       try {
-        const members = await fetchTeamMembers(projectSlug);
+        const members = await ContextCardService.fetchTeamMembers(projectSlug);
         setTeamMembers(members);
         setFilteredMembers(members);
       } catch (error) {

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
-import axios from "axios";
+import { StandupService } from "@/services";
 
 export default function TeamStandupDigest({ teamSlug }: { teamSlug: string }) {
   const [open, setOpen] = useState(false);
@@ -16,8 +16,8 @@ export default function TeamStandupDigest({ teamSlug }: { teamSlug: string }) {
     if (status !== "authenticated") return;
     setIsLoading(true);
     try {
-      const res = await axios.get(`/api/teams/${teamSlug}/standup`);
-      setDigest(res.data.summary);
+      const data = await StandupService.getTeamStandup(teamSlug);
+      setDigest(data.summary || null);
     } catch (error: unknown) {
       console.error(error);
       const errorMessage = error instanceof Error && 'response' in error && 

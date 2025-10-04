@@ -2,9 +2,8 @@ import { NextRequest } from 'next/server';
 import { headers } from 'next/headers';
 import { Session } from 'next-auth';
 import { prisma } from '@/lib/prisma';
-import { UserInfo } from '@/interfaces/UserInfo';
-import { JWTToken } from '@/interfaces/JWTToken';
-
+import { UserInfo } from '@/interfaces/common';
+import { JWTToken } from '@/interfaces/auth';
 /**
  * Gets user information from middleware headers and ensures user exists in database
  * This should be called at the start of API routes that need authenticated user data
@@ -36,8 +35,8 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<UserIn
   return {
     id: user.id,
     email: user.email!,
-    name: user.name,
-    image: user.image,
+    name: user.name || undefined,
+    image: user.image || undefined,
   };
 }
 
@@ -73,8 +72,8 @@ export async function getAuthenticatedUserFromAction(): Promise<UserInfo> {
   return {
     id: user.id,
     email: user.email!,
-    name: user.name,
-    image: user.image,
+    name: user.name || undefined,
+    image: user.image || undefined,
   };
 }
 
@@ -104,14 +103,13 @@ export async function getAuthenticatedUserFromSession(session: Session | null): 
   return {
     id: user.id,
     email: user.email!,
-    name: user.name,
-    image: user.image,
+    name: user.name || undefined,
+    image: user.image || undefined,
   };
 }
 
 /**
  * Legacy function for routes that still need token-based auth
- * Use getAuthenticatedUser instead when possible
  */
 export async function getUserFromToken(token: JWTToken): Promise<UserInfo> {
   if (!token?.email) {
@@ -134,7 +132,7 @@ export async function getUserFromToken(token: JWTToken): Promise<UserInfo> {
   return {
     id: user.id,
     email: user.email!,
-    name: user.name,
-    image: user.image,
+    name: user.name || undefined,
+    image: user.image || undefined,
   };
 }

@@ -1,10 +1,9 @@
 "use client";
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import dynamic from 'next/dynamic';
-import { ContextCardWithRelations } from "@/interfaces/ContextCardWithRelations";
+import { ContextCardWithRelations } from "@/interfaces/context-cards";
 import { useSession } from "next-auth/react";
-import { paginationConfig } from '@/config/pagination';
-import axios from "axios";
+import { ContextCardService } from "@/services/contextCard.service";
 import ErrorBoundary from './ErrorBoundary';
 
 // Lazy load ContextCardModal
@@ -113,33 +112,19 @@ const AssignedCards = memo(function AssignedCards({
     setLoading(true);
     
     try {
-      let params = `status=ACTIVE&offset=${pageNum * paginationConfig.pageSize}&limit=${paginationConfig.pageSize}`;
+      const { cards: newCards, hasMore: hasMoreCards } = await ContextCardService.fetchAssignedCards({
+        pageNum,
+        userEmail,
+        teamId,
+        currentUserOnly,
+      });
       
-      if (currentUserOnly) {
-        params += `&assignedTo=${encodeURIComponent(userEmail)}`;
-        if (teamId) {
-          params += `&teamId=${teamId}`;
-        }
-      } else if (teamId) {
-        params += `&teamId=${teamId}`;
-      } else {
-        params += `&assignedTo=${encodeURIComponent(userEmail)}`;
-      }
-
-      const res = await axios.get(`/api/context-cards?${params}`);
-      const data = res.data;
-      
-      if (Array.isArray(data.cards)) {
-        setCards((prev) => {
-          // Avoid duplicates using Set for O(1) lookup
-          const existingIds = new Set(prev.map(c => c.id));
-          const newCards = data.cards.filter((c: ContextCardWithRelations) => !existingIds.has(c.id));
-          return [...prev, ...newCards];
-        });
-        setHasMore(data.cards.length === paginationConfig.pageSize);
-      } else {
-        setHasMore(false);
-      }
+      setCards((prev) => {
+        const existingIds = new Set(prev.map(c => c.id));
+        const filteredNewCards = newCards.filter((c: ContextCardWithRelations) => !existingIds.has(c.id));
+        return [...prev, ...filteredNewCards];
+      });
+      setHasMore(hasMoreCards);
     } catch (error) {
       console.error("Error fetching assigned cards:", error);
       setHasMore(false);
@@ -223,19 +208,12 @@ const AssignedCards = memo(function AssignedCards({
         >
           <ContextCardModal
             open={modalOpen}
-            setOpen={(val) => {
+            setOpen={(val: boolean) => {
               setModalOpen(val);
               if (!val) setSelectedCard(null);
             }}
             projectSlug={selectedCard.project?.slug || ""}
-            existingCard={{
-              ...selectedCard,
-              why: selectedCard.why ?? undefined,
-              issues: selectedCard.issues ?? undefined,
-              attachments: selectedCard.attachments ?? undefined,
-              status: selectedCard.status ?? "ACTIVE",
-              summary: selectedCard.summary ?? undefined,
-            }}
+            existingCard={selectedCard as unknown as ContextCardWithRelations}
             onSuccess={() => {
               setModalOpen(false);
               setSelectedCard(null);

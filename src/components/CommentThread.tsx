@@ -6,9 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { getAblyClient } from "@/lib/ably/ably";
-import axios from "axios";
+import { CommentService } from "@/services";
 import type * as Ably from 'ably';
-import { Comment } from "@/interfaces/Comment";
+import { Comment } from "@/interfaces/comments";
 import { paginationConfig } from '@/config/pagination';
 import { channelsConfig } from '@/config/channels';
 import ErrorBoundary from './ErrorBoundary';
@@ -44,8 +44,7 @@ export default function CommentThread({ cardId }: { cardId: string }) {
   const fetchComments = useCallback(async (cursor?: string) => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`/api/context-cards/${cardId}/comments?limit=${paginationConfig.commentLimit}${cursor ? `&cursor=${cursor}` : ""}`);
-      const data = res.data;
+      const data = await CommentService.getComments(cardId, paginationConfig.commentLimit, cursor);
 
       if (cursor) {
         // For pagination, append older comments and ensure no duplicates
@@ -118,7 +117,7 @@ export default function CommentThread({ cardId }: { cardId: string }) {
     setIsSubmitting(true);
 
     try {
-      await axios.post(`/api/context-cards/${cardId}/comments`, {
+      await CommentService.createComment(cardId, {
         content: newComment
       });
 

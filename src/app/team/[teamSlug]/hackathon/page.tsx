@@ -2,12 +2,14 @@ import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth/next';
 import dynamic from 'next/dynamic';
 import { authOptions } from '@/lib/auth';
-import { TeamHackathon } from '@/interfaces/TeamHackathon';
-import { ContextCardWithRelations } from '@/interfaces/ContextCardWithRelations';
-import { HackathonUpdate } from '@/interfaces/HackathonUpdate';
-import { prisma } from '@/lib/prisma';
+import { TeamHackathon } from '@/interfaces/teams';
+import { ContextCardWithRelations } from '@/interfaces/context-cards';
+import { HackathonUpdate } from '@/interfaces/activities';
 import { Session } from 'next-auth';
 import { getAuthenticatedUserFromSession } from '@/lib/auth-utils';
+import { findTeamBySlugWithRelations, getUserTeamMembership } from '@/queries/team-queries';
+import { findTeamAssignedCards } from '@/queries/card-queries';
+import { findTeamHackathonUpdates } from '@/queries/activity-queries';
 
 // Lazy load HackathonPageClient for better performance
 const HackathonPageClient = dynamic(() => import('@/components/client/HackathonPageClient'), {
@@ -21,7 +23,7 @@ const HackathonPageClient = dynamic(() => import('@/components/client/HackathonP
   )
 });
 
-import { HackathonPageProps } from '@/interfaces/HackathonPageProps';
+import { HackathonPageProps } from '@/interfaces/ui-components';
 
 // Server-side data fetching for team data
 async function fetchTeamData(teamSlug: string): Promise<TeamHackathon | null> {
@@ -34,50 +36,14 @@ async function fetchTeamData(teamSlug: string): Promise<TeamHackathon | null> {
       return null;
     }
 
-    const team = await prisma.team.findUnique({
-      where: { slug: teamSlug },
-      include: {
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-                emailVerified: true,
-                lastSeenat: true,
-              },
-            },
-          },
-          where: { status: 'ACTIVE' },
-        },
-        projects: {
-          include: {
-            createdBy: true,
-          },
-          where: { isArchived: false },
-        },
-        _count: {
-          select: {
-            members: {
-              where: { status: 'ACTIVE' }
-            },
-            projects: true,
-          },
-        },
-      },
-    });
-
+    // get team with relations
+    const team = await findTeamBySlugWithRelations(teamSlug);
     if (!team) {
       return null;
     }
 
-    // Check if user is a member of this team
-    const userMembership = team.members.find(
-      (member) => member.user.id === user.id
-    );
-
+    // Check if user is a member of this team 
+    const userMembership = await getUserTeamMembership(user.id, teamSlug);
     if (!userMembership) {
       return null;
     }
@@ -112,53 +78,28 @@ async function fetchTeamData(teamSlug: string): Promise<TeamHackathon | null> {
 async function fetchHackathonCards(teamSlug: string): Promise<ContextCardWithRelations[]> {
   try {
     const session = await getServerSession(authOptions) as Session | null;
-    if (!session?.user?.email) {
+    
+    // Get authenticated user
+    const user = await getAuthenticatedUserFromSession(session);
+    if (!user) {
       return [];
     }
 
-    const team = await prisma.team.findUnique({
-      where: { slug: teamSlug },
-      select: { id: true },
-    });
-
+    // Get team to extract team ID
+    const team = await findTeamBySlugWithRelations(teamSlug);
     if (!team) {
       return [];
     }
 
-    const cards = await prisma.contextCard.findMany({
-      where: {
-        project: {
-          teamId: team.id,
-        },
-        isArchived: false,
-        type: 'TASK',
-      },
-      include: {
-        project: {
-          include: {
-            team: true,
-          },
-        },
-        assignedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+    // Check if user has access to this team
+    const userMembership = await getUserTeamMembership(user.id, teamSlug);
+    if (!userMembership) {
+      return [];
+    }
+
+    // get team assigned cards
+    const cards = await findTeamAssignedCards(team.id, undefined, {
+      status: 'ACTIVE', // Only active cards for hackathon view
     });
 
     return cards.map(card => ({
@@ -173,16 +114,38 @@ async function fetchHackathonCards(teamSlug: string): Promise<ContextCardWithRel
 }
 
 // Server-side data fetching for hackathon updates
-async function fetchHackathonUpdates(): Promise<HackathonUpdate[]> {
+async function fetchHackathonUpdates(teamSlug: string): Promise<HackathonUpdate[]> {
   try {
     const session = await getServerSession(authOptions) as Session | null;
-    if (!session?.user?.email) {
+    
+    // Get authenticated user
+    const user = await getAuthenticatedUserFromSession(session);
+    if (!user) {
       return [];
     }
 
-    // For now, return empty array as we don't have hackathon updates implemented yet
-    // This can be expanded later when the hackathon updates feature is implemented
-    return [];
+    // Check if user is a member of the team
+    const teamMember = await getUserTeamMembership(user.id, teamSlug);
+    if (!teamMember) {
+      return [];
+    }
+
+    // Get hackathon updates for this team 
+    const updates = await findTeamHackathonUpdates(teamMember.team.id, {
+      take: 50, // Limit to last 50 updates
+    });
+
+    // Transform to match expected format
+    return updates.map(update => ({
+      id: update.id,
+      userId: update.userId!,
+      content: update.description,
+      createdAt: update.createdAt.toISOString(),
+      user: {
+        name: update.user?.name || update.user?.email?.split('@')[0] || 'User',
+        image: update.user?.image,
+      },
+    })) as unknown as HackathonUpdate[];
   } catch (error) {
     console.error('Error fetching hackathon updates:', error);
     return [];
@@ -203,7 +166,7 @@ export default async function TeamHackathonPage({ params }: HackathonPageProps) 
   
   // Only fetch cards and updates if hackathon mode is enabled
   const cards = team?.hackathonModeEnabled ? await fetchHackathonCards(teamSlug) : [];
-  const updates = team?.hackathonModeEnabled ? await fetchHackathonUpdates() : [];
+  const updates = team?.hackathonModeEnabled ? await fetchHackathonUpdates(teamSlug) : [];
 
   return (
     <HackathonPageClient 

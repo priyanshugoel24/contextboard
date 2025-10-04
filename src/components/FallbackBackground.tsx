@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { FallbackBackgroundProps } from '@/interfaces/FallbackBackgroundProps';
+import { FallbackBackgroundProps } from '@/interfaces/ui-components';
 
 export default function FallbackBackground({ className = "" }: FallbackBackgroundProps) {
   return (

@@ -9,7 +9,7 @@ import {
   FuseSearchResult,
   RelevantProject,
   RelevantTeam,
-} from "@/interfaces/SearchTypes";
+} from "@/interfaces/search";
 import { bodySchema } from "@/lib/security";
 
 // Enhanced fuzzy matching for project and team identification

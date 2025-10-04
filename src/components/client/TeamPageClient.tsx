@@ -35,15 +35,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Calendar, Settings, UserPlus, BarChart3, Target, Archive, ArchiveRestore } from 'lucide-react';
-import { ContextCardWithRelations } from '@/interfaces/ContextCardWithRelations';
-import { TeamPageTeam } from '@/interfaces/TeamPageTeam';
-import { TeamPageProject } from '@/interfaces/TeamPageProject';
-import { TeamPageClientProps } from '@/interfaces/TeamPageClientProps';
+import { ContextCardWithRelations } from '@/interfaces/context-cards';
+import { TeamPageTeam } from '@/interfaces/teams';
+import { TeamPageProject } from '@/interfaces/projects';
+import { ActivityWithRelations } from '@/interfaces/activities';
+import { TeamPageClientProps } from '@/interfaces/ui-components';
 import { ErrorBoundary } from '@/components';
 
 export default function TeamPageClient({ initialTeam, teamSlug }: TeamPageClientProps) {
   const router = useRouter();
-  const [team, setTeam] = useState<TeamPageTeam | null>(initialTeam);
+  const [team, setTeam] = useState<TeamPageTeam | null>(initialTeam as unknown as TeamPageTeam);
   const [loading, setLoading] = useState(false);
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -484,7 +485,7 @@ export default function TeamPageClient({ initialTeam, teamSlug }: TeamPageClient
               <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
               <ActivityFeed 
                 teamSlug={teamSlug as string} 
-                initialActivities={team?.activities || []} 
+                initialActivities={(team?.activities as unknown as ActivityWithRelations[]) || []} 
               />
             </div>
 

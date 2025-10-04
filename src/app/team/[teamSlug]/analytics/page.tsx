@@ -9,6 +9,7 @@ import BackButton from '@/components/ui/BackButton';
 import { Metadata } from 'next';
 import { ComponentLoadingSpinner } from '@/components/LoadingSpinner';
 import { Suspense } from 'react';
+import { getTeamAnalyticsWithAccess, getTeamBasicInfo } from '@/queries/analytics-queries';
 
 // Lazy load chart components with better loading states
 const AnalyticsCharts = dynamic(() => import('@/components/charts/AnalyticsCharts'), {
@@ -38,10 +39,9 @@ import {
   Award,
   Timer,
 } from 'lucide-react';
-import { TeamAnalytics } from '@/interfaces/TeamAnalytics';
-import { TeamAnalyticsPageProps } from '@/interfaces/TeamAnalyticsPageProps';
+import { TeamAnalytics } from '@/interfaces/teams';
+import { TeamAnalyticsPageProps } from '@/interfaces/ui-components';
 import { analyticsConfig } from '@/config/analytics';
-import { prisma } from '@/lib/prisma';
 import { Session } from 'next-auth';
 import { getAuthenticatedUserFromSession } from '@/lib/auth-utils';
 
@@ -57,20 +57,8 @@ export async function generateMetadata({ params }: TeamAnalyticsPageProps): Prom
       };
     }
 
-    // Get team data for metadata
-    const team = await prisma.team.findUnique({
-      where: { slug: teamSlug },
-      select: {
-        name: true,
-        description: true,
-        _count: {
-          select: {
-            members: true,
-            projects: true,
-          },
-        },
-      },
-    });
+    // Get team data for metadata 
+    const team = await getTeamBasicInfo(teamSlug);
 
     if (!team) {
       return {
@@ -123,129 +111,9 @@ async function fetchTeamAnalytics(teamSlug: string): Promise<TeamAnalytics | nul
       return null;
     }
 
-    const team = await prisma.team.findUnique({
-      where: { slug: teamSlug },
-      include: {
-        members: {
-          include: {
-            user: true,
-          },
-          where: { status: 'ACTIVE' },
-        },
-        projects: {
-          include: {
-            contextCards: {
-              include: {
-                user: true,
-              },
-            },
-          },
-          where: { isArchived: false },
-        },
-      },
-    });
-
-    if (!team) {
-      return null;
-    }
-
-    // Check if user is a member of this team
-    const userMembership = team.members.find(
-      (member) => member.user.id === user.id
-    );
-
-    if (!userMembership) {
-      return null;
-    }
-
-    // Calculate analytics
-    const totalProjects = team.projects.length;
-    const completedProjects = team.projects.filter(p => 
-      p.contextCards.length > 0 && p.contextCards.every(c => c.status === 'CLOSED')
-    ).length;
-    const activeProjects = totalProjects - completedProjects;
-
-    const allCards = team.projects.flatMap(p => p.contextCards);
-    const totalCards = allCards.length;
-    const totalTasks = allCards.filter(c => c.type === 'TASK').length;
-    const completedTasks = allCards.filter(c => c.type === 'TASK' && c.status === 'CLOSED').length;
-    const activeTasks = totalTasks - completedTasks;
-    const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-    const activeMembers = team.members.length;
-
-    // Calculate average time to complete (simplified)
-    const avgTimeToComplete = 2.5; // Placeholder number
-
-    // Project progress
-    const projectProgress = team.projects.map(project => {
-      const projectTasks = project.contextCards.filter(c => c.type === 'TASK');
-      const projectCompletedTasks = projectTasks.filter(c => c.status === 'CLOSED').length;
-      const progress = projectTasks.length > 0 ? Math.round((projectCompletedTasks / projectTasks.length) * 100) : 0;
-      
-      return {
-        id: project.id,
-        name: project.name,
-        slug: project.slug,
-        progress,
-        completedTasks: projectCompletedTasks,
-        totalTasks: projectTasks.length,
-      };
-    });
-
-    // Weekly velocity (simplified - returning empty for now)
-    const weeklyVelocity = Array.from({ length: 8 }, (_, i) => ({
-      week: `Week ${i + 1}`,
-      completed: 0,
-      created: 0,
-    }));
-
-    // Card type distribution
-    const cardTypes = allCards.reduce((acc, card) => {
-      acc[card.type] = (acc[card.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const cardTypeDistribution = Object.entries(cardTypes).map(([type, count]) => ({
-      type,
-      count,
-      percentage: totalCards > 0 ? Math.round((count / totalCards) * 100) : 0,
-    }));
-
-    // Top contributors
-    const contributors = allCards.reduce((acc, card) => {
-      const userId = card.user.id;
-      const userName = card.user.name || card.user.email || 'Unknown';
-      if (!acc[userId]) {
-        acc[userId] = { userId, userName, cardsCreated: 0, cardsCompleted: 0 };
-      }
-      acc[userId].cardsCreated += 1;
-      if (card.status === 'CLOSED') {
-        acc[userId].cardsCompleted += 1;
-      }
-      return acc;
-    }, {} as Record<string, { userId: string; userName: string; cardsCreated: number; cardsCompleted: number; }>);
-
-    const topContributors = Object.values(contributors)
-      .sort((a, b) => b.cardsCreated - a.cardsCreated)
-      .slice(0, 5);
-
-    return {
-      totalProjects,
-      completedProjects,
-      activeProjects,
-      totalCards,
-      totalTasks,
-      completedTasks,
-      activeTasks,
-      taskCompletionRate,
-      activeMembers,
-      avgTimeToComplete,
-      projectProgress,
-      weeklyVelocity,
-      cardTypeDistribution,
-      topContributors,
-    } as TeamAnalytics;
+    const analytics = await getTeamAnalyticsWithAccess(user.id, teamSlug);
+    
+    return analytics;
   } catch (error) {
     console.error('Error fetching team analytics:', error);
     return null;
@@ -397,9 +265,20 @@ export default async function TeamAnalyticsPage({
               <Suspense fallback={<ComponentLoadingSpinner text="Loading velocity data..." />}>
                 <WeeklyVelocityChart data={analytics.weeklyVelocity} />
               </Suspense>
-              {analytics.weeklyVelocity.every(week => week.completed === 0) && (
+              {analytics.weeklyVelocity.every(week => week.completed === 0 && week.created === 0) ? (
                 <div className="text-center text-muted-foreground mt-4">
-                  <p className="text-sm">No tasks completed in the last 8 weeks</p>
+                  <p className="text-sm">No activity in the last 8 weeks</p>
+                </div>
+              ) : (
+                <div className="flex justify-center mt-4 gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-0.5 bg-blue-500"></div>
+                    <span>Created</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-0.5 bg-green-500"></div>
+                    <span>Completed</span>
+                  </div>
                 </div>
               )}
             </CardContent>

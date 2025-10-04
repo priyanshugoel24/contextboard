@@ -2,11 +2,11 @@ import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import ProjectSettingsPageClient from '@/components/ProjectSettingsPageClient';
-import { prisma } from '@/lib/prisma';
-import { ProjectSettingsPageProps } from '@/interfaces/ProjectSettingsPageProps';
+import { ProjectSettingsPageProps } from '@/interfaces/ui-components';
 import { Session } from 'next-auth';
-import { ProjectData } from '@/interfaces/ProjectData';
+import { ProjectData } from '@/interfaces/projects';
 import { getAuthenticatedUserFromSession } from '@/lib/auth-utils';
+import { findUserAccessibleProject } from '@/queries/project-queries';
 
 // Server-side data fetching
 async function fetchProject(teamSlug: string, projectSlug: string): Promise<ProjectData | null> {
@@ -20,45 +20,34 @@ async function fetchProject(teamSlug: string, projectSlug: string): Promise<Proj
     }
 
     // Get project data
-    const project = await prisma.project.findUnique({
-      where: {
-        slug: projectSlug,
-      },
-      include: {
-        contextCards: {
-          select: {
-            id: true,
-            title: true,
-            content: true,
-            type: true,
-            createdAt: true,
-            updatedAt: true,
+    const project = await findUserAccessibleProject(
+      projectSlug,
+      user.id,
+      {
+        include: {
+          contextCards: {
+            select: {
+              id: true,
+              title: true,
+              content: true,
+              type: true,
+              createdAt: true,
+              updatedAt: true,
+            },
           },
-        },
-        team: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            createdAt: true,
-            members: {
-              include: {
-                user: true,
-              },
+          team: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              createdAt: true,
             },
           },
         },
-      },
-    });    if (!project || !project.team || project.team.slug !== teamSlug) {
-      return null;
-    }
-
-    // Check if user is a member of the project's team
-    const userMembership = project.team.members.find(
-      (member) => member.user.id === user.id
+      }
     );
 
-    if (!userMembership) {
+    if (!project || !project.team || project.team.slug !== teamSlug) {
       return null;
     }
 
@@ -74,7 +63,7 @@ async function fetchProject(teamSlug: string, projectSlug: string): Promise<Proj
         name: project.team.name,
         slug: project.team.slug,
       } : undefined,
-    } as ProjectData;
+    } as unknown as ProjectData;
   } catch (error) {
     console.error('Error fetching project:', error);
     return null;

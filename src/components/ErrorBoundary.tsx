@@ -3,7 +3,7 @@ import React, { Component } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ErrorBoundaryState, ErrorBoundaryProps } from '@/interfaces/ErrorBoundaryInterfaces';
+import { ErrorBoundaryState, ErrorBoundaryProps } from '@/interfaces/ui-components';
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   private resetTimeoutId: number | null = null;

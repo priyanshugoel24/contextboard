@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ContextCardForm } from "@/components/forms";
-import { ContextCardModalProps } from "@/interfaces/ContextCardModalProps";
+import { ContextCardModalProps } from "@/interfaces/ui-components";
 
 const ContextCardModal = memo(function ContextCardModal({
   open,
@@ -32,7 +32,7 @@ const ContextCardModal = memo(function ContextCardModal({
         </DialogHeader>
         
         <ContextCardForm 
-          projectId={projectSlug} 
+          projectSlug={projectSlug || ""} 
           existingCard={existingCard}
           onSuccess={handleSuccess}
         />

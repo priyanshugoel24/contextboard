@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Target, CheckCircle2, Play, Pause, Timer, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { FocusModeProps } from "@/interfaces/FocusModeProps";
+import { FocusModeProps } from "@/interfaces/ui-components";
 import { focusModeConfig } from '@/config/focusMode';
 import axios from "axios";
 

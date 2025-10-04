@@ -15,11 +15,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Settings, Users, Plus, Crown, Shield, User, Trash2 } from 'lucide-react';
 import { InviteMemberModal } from '@/components/modals';
 import { toast } from 'sonner';
-import { TeamSettingsTeam } from '@/interfaces/TeamSettingsTeam';
-import { TeamSettingsPageClientProps } from '@/interfaces/TeamSettingsPageClientProps';
+import { TeamSettingsTeam } from '@/interfaces/teams';
+import { TeamSettingsPageClientProps } from '@/interfaces/ui-components';
 
 export default function TeamSettingsPageClient({ team: initialTeam, teamSlug }: TeamSettingsPageClientProps) {
-  const [team, setTeam] = useState<TeamSettingsTeam>(initialTeam);
+  const [team, setTeam] = useState<TeamSettingsTeam>(initialTeam as unknown as TeamSettingsTeam);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -226,7 +226,7 @@ export default function TeamSettingsPageClient({ team: initialTeam, teamSlug }: 
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {team.members.map((member) => (
+                {team.members?.map((member) => (
                   <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
                       <Image

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Team } from '@prisma/client';
+import { Activity } from '@/interfaces/activities';
 
 export class TeamService {
   static async getTeam(slug: string) {
@@ -39,6 +40,42 @@ export class TeamService {
 
   static async updateMemberRole(teamSlug: string, memberId: string, role: string) {
     const response = await axios.patch(`/api/teams/${teamSlug}/members/${memberId}`, { role });
+    return response.data;
+  }
+
+  static async getTeamActivities(teamSlug: string): Promise<{ activities: Activity[] }> {
+    const response = await axios.get(`/api/teams/${teamSlug}/activities`);
+    return response.data;
+  }
+
+  // Hackathon methods
+  static async updateHackathonSettings(teamSlug: string, data: { hackathonModeEnabled?: boolean; hackathonDeadline?: string }) {
+    const response = await axios.patch(`/api/teams/${teamSlug}/hackathon`, data);
+    return response.data;
+  }
+
+  static async getHackathonCards(teamSlug: string) {
+    const response = await axios.get(`/api/teams/${teamSlug}/hackathon-cards`);
+    return response.data;
+  }
+
+  static async getHackathonUpdates(teamSlug: string) {
+    const response = await axios.get(`/api/teams/${teamSlug}/hackathon-updates`);
+    return response.data;
+  }
+
+  static async createHackathonUpdate(teamSlug: string, data: { title: string; description: string }) {
+    const response = await axios.post(`/api/teams/${teamSlug}/hackathon-updates`, data);
+    return response.data;
+  }
+
+  static async updateHackathonSettings2(teamSlug: string, data: Record<string, unknown>) {
+    const response = await axios.patch(`/api/teams/${teamSlug}/hackathon-settings`, data);
+    return response.data;
+  }
+
+  static async getAllTeams() {
+    const response = await axios.get('/api/teams');
     return response.data;
   }
 }

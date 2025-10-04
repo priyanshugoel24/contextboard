@@ -6,15 +6,15 @@ import { formatDistanceToNow } from "date-fns";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from "axios";
+import { ProjectService, TeamService } from "@/services";
 import type * as Ably from 'ably';
-import { ActivityFeedProps } from "@/interfaces/ActivityFeedProps";
-import { Activity } from "@/interfaces/Activity";
+import { ActivityFeedProps } from "@/interfaces/ui-components";
+import { ActivityWithRelations } from "@/interfaces/activities";
 import { channelsConfig } from '@/config/channels';
 
 export default function ActivityFeed({ projectId, slug, teamSlug, initialActivities }: ActivityFeedProps) {
   const { data: session } = useSession();
-  const [activities, setActivities] = useState<Activity[]>(initialActivities || []);
+  const [activities, setActivities] = useState<ActivityWithRelations[]>(initialActivities || []);
   const [loading, setLoading] = useState(!initialActivities);
   const [actualProjectId, setActualProjectId] = useState<string | null>(null);
 
@@ -31,22 +31,22 @@ export default function ActivityFeed({ projectId, slug, teamSlug, initialActivit
 
     const fetchActivities = async () => {
       try {
-        let res;
+        let data;
         if (teamSlug) {
           // Fetch team activities
-          res = await axios.get(`/api/teams/${teamSlug}/activities`);
-        } else {
+          data = await TeamService.getTeamActivities(teamSlug);
+        } else if (identifier) {
           // Fetch project activities
-          res = await axios.get(`/api/projects/${identifier}/activities`);
+          data = await ProjectService.getProjectActivities(identifier);
+        } else {
+          return;
         }
         
-        const data = res.data;
-        setActivities(data?.activities ?? []);
+        setActivities((data?.activities ?? []) as unknown as ActivityWithRelations[]);
         
         // If we used slug, we need to get the actual projectId for Ably channel
         if (slug && !projectId && !teamSlug) {
-          const projectRes = await axios.get(`/api/projects/${identifier}`);
-          const projectData = projectRes.data;
+          const projectData = await ProjectService.getProject(slug);
           if (projectData.project?.id) {
             setActualProjectId(projectData.project.id);
           }
@@ -75,7 +75,7 @@ export default function ActivityFeed({ projectId, slug, teamSlug, initialActivit
 
     const handleNewActivity = (msg: Ably.Message) => {
       if (msg.name === "activity:created") {
-        const activityData = msg.data as Activity;
+        const activityData = msg.data as ActivityWithRelations;
         setActivities((prev) => [activityData, ...prev]);
       }
     };
@@ -113,7 +113,7 @@ export default function ActivityFeed({ projectId, slug, teamSlug, initialActivit
               {activity.user?.image ? (
                 <Image
                   src={activity.user.image}
-                  alt={activity.user.name}
+                  alt={activity.user.name || 'User'}
                   width={32}
                   height={32}
                   className="rounded-full object-cover"

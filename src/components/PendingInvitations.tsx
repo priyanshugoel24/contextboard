@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Mail, User, Calendar } from "lucide-react";
 import { toast } from "sonner";
-import axios from "axios";
-import { TeamInvitation } from "@/interfaces/TeamInvitation";
+import { InvitationService } from "@/services";
+import { TeamInvitation } from "@/interfaces/teams";
 import ErrorBoundary from './ErrorBoundary';
 
 export default function PendingInvitations({ onInvitationAccepted }: { onInvitationAccepted?: () => void }) {
@@ -18,8 +18,7 @@ export default function PendingInvitations({ onInvitationAccepted }: { onInvitat
 
   const fetchInvitations = async () => {
     try {
-      const res = await axios.get("/api/invitations");
-      const data = res.data;
+      const data = await InvitationService.getInvitations();
       setTeamInvitations(data.teamInvitations || []);
     } catch (error) {
       console.error("Error fetching invitations:", error);
@@ -37,7 +36,7 @@ export default function PendingInvitations({ onInvitationAccepted }: { onInvitat
     setProcessingIds(prev => new Set(prev).add(invitationId));
     
     try {
-      await axios.post(`/api/teams/${teamSlug}/accept-invite`);
+      await InvitationService.acceptInvitation(teamSlug);
 
       toast.success("Team invitation accepted!");
       // Remove from team invitations list
@@ -65,7 +64,7 @@ export default function PendingInvitations({ onInvitationAccepted }: { onInvitat
     setProcessingIds(prev => new Set(prev).add(invitationId));
     
     try {
-      await axios.post(`/api/teams/${teamSlug}/decline-invite`);
+      await InvitationService.declineInvitation(teamSlug);
 
       toast.success("Team invitation declined");
       // Remove from team invitations list

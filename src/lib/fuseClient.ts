@@ -1,4 +1,4 @@
-import { SearchableItem } from "@/interfaces/SearchableItem";
+import { SearchableItem } from "@/interfaces/search";
 import Fuse from "fuse.js";
 
 let fuse: Fuse<SearchableItem> | null = null;

@@ -19,7 +19,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
-import { RichTextEditorProps } from "@/interfaces/RichTextEditorProps";
+import { RichTextEditorProps } from "@/interfaces/ui-components";
 
 export default function RichTextEditor({
   value,

@@ -1,7 +1,7 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import { LoadingSpinnerProps } from '@/interfaces/LoadingSpinnerProps';
+import { LoadingSpinnerProps } from '@/interfaces/ui-components';
 import { SPINNER_SIZE_CLASSES } from '@/config/loading';
 
 export default function LoadingSpinner({ 

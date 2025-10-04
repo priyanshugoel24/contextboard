@@ -3,14 +3,14 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { Navbar } from '@/components';
 import { TeamSettingsPageClient } from '@/components/client';
-import { TeamSettingsTeam } from '@/interfaces/TeamSettingsTeam';
-import { TeamSettingsPageProps } from '@/interfaces/TeamSettingsPageProps';
+import { TeamWithRelations } from '@/interfaces/teams';
+import { TeamSettingsPageProps } from '@/interfaces/ui-components';
 import { Session } from 'next-auth';
 import { getAuthenticatedUserFromSession } from '@/lib/auth-utils';
 import { fetchTeamBySlug } from '@/lib/teams-utils';
 
-// Server-side data fetching using auth and teams utilities
-async function fetchTeam(teamSlug: string): Promise<TeamSettingsTeam | null> {
+// Server-side data fetching 
+async function fetchTeam(teamSlug: string): Promise<TeamWithRelations | null> {
   try {
     const session = await getServerSession(authOptions) as Session | null;
     
@@ -37,10 +37,7 @@ async function fetchTeam(teamSlug: string): Promise<TeamSettingsTeam | null> {
 
     return {
       ...team,
-      userRole: userMembership.role,
-      currentUserId: user.id,
-      hackathonDeadline: team.hackathonDeadline?.toISOString(),
-    } as unknown as TeamSettingsTeam;
+    } as unknown as TeamWithRelations;
   } catch (error) {
     console.error('Error fetching team:', error);
     return null;

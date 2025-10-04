@@ -1,7 +1,7 @@
-// Central configuration exports
 export { ablyConfig } from './ably';
 export { analyticsConfig } from './analytics';
 export { apiConfig } from './api';
+export { appConfig } from './app';
 export { authConfig } from './auth';
 export { cardConfig } from './cards';
 export { channelsConfig } from './channels';
@@ -24,6 +24,7 @@ export const config = {
   ably: () => import('./ably').then(m => m.ablyConfig),
   analytics: () => import('./analytics').then(m => m.analyticsConfig),
   api: () => import('./api').then(m => m.apiConfig),
+  app: () => import('./app').then(m => m.appConfig),
   auth: () => import('./auth').then(m => m.authConfig),
   cards: () => import('./cards').then(m => m.cardConfig),
   channels: () => import('./channels').then(m => m.channelsConfig),

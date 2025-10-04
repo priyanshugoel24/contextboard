@@ -119,7 +119,7 @@ const OnlineUsers = memo(function OnlineUsers() {
                 </AvatarFallback>
               </Avatar>
               <div
-                className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full ring-2 ring-white dark:ring-gray-800 ${getStatusColor(user.status)}`}
+                className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full ring-2 ring-white dark:ring-gray-800 ${getStatusColor(user.status || "Available")}`}
               />
             </div>
             <div className="flex-1 min-w-0">

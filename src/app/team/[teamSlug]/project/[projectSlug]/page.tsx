@@ -5,13 +5,14 @@ import { Navbar } from "@/components";
 import { ProjectPageClient } from "@/components/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { ProjectPageProject } from '@/interfaces/ProjectPageProject';
-import { ProjectPageTeam } from '@/interfaces/ProjectPageTeam';
-import { prisma } from '@/lib/prisma';
-import { ProjectPageProps } from '@/interfaces/ProjectPageProps';
+import { ProjectPageProps } from '@/interfaces/ui-components';
+import { ProjectData } from '@/interfaces/projects';
+import { TeamWithRelations } from '@/interfaces/teams';
 import { Session } from 'next-auth';
 import { Metadata } from 'next';
 import { getAuthenticatedUserFromSession } from '@/lib/auth-utils';
+import { findUserAccessibleProject } from '@/queries/project-queries';
+import { findTeamActivities } from '@/queries/activity-queries';
 
 export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
   const { projectSlug } = await params;
@@ -25,13 +26,18 @@ export async function generateMetadata({ params }: ProjectPageProps): Promise<Me
       };
     }
 
-    // Get project and team data for metadata
-    const project = await prisma.project.findUnique({
-      where: { slug: projectSlug },
-      select: {
-        name: true,
-        description: true,
-        tags: true,
+    // Get authenticated user
+    const user = await getAuthenticatedUserFromSession(session);
+    if (!user) {
+      return {
+        title: 'Project Dashboard',
+        description: 'Access your project dashboard to manage tasks and collaborate.',
+      };
+    }
+
+    // Get project data for metadata using service layer
+    const project = await findUserAccessibleProject(projectSlug, user.id, {
+      include: {
         _count: {
           select: {
             contextCards: true,
@@ -97,8 +103,8 @@ export async function generateMetadata({ params }: ProjectPageProps): Promise<Me
 
 // Server-side data fetching
 async function fetchProjectData(teamSlug: string, projectSlug: string): Promise<{
-  project: ProjectPageProject;
-  team: ProjectPageTeam;
+  project: ProjectData;
+  team: TeamWithRelations;
 } | null> {
   try {
     const session = await getServerSession(authOptions) as Session | null;
@@ -109,8 +115,8 @@ async function fetchProjectData(teamSlug: string, projectSlug: string): Promise<
       return null;
     }
 
-    const project = await prisma.project.findUnique({
-      where: { slug: projectSlug },
+    // Get project with relations
+    const project = await findUserAccessibleProject(projectSlug, user.id, {
       include: {
         team: {
           include: {
@@ -130,17 +136,15 @@ async function fetchProjectData(teamSlug: string, projectSlug: string): Promise<
           where: { isArchived: false },
           orderBy: { createdAt: 'desc' },
         },
-        activities: {
-          include: {
-            user: {
-              select: { id: true, name: true, image: true },
-            },
-            project: {
-              select: { id: true, name: true, slug: true },
+        _count: {
+          select: {
+            contextCards: {
+              where: {
+                type: 'TASK',
+                isArchived: false,
+              },
             },
           },
-          orderBy: { createdAt: "desc" },
-          take: 50,
         },
       },
     });
@@ -158,29 +162,42 @@ async function fetchProjectData(teamSlug: string, projectSlug: string): Promise<
       return null;
     }
 
+    // Get project activities 
+    const activities = await findTeamActivities([project.team.id], {
+      includeProjects: true,
+      take: 50,
+    });
+
+    // Calculate task stats
+    const totalTasks = project._count?.contextCards || 0;
+    const completedTasks = project.contextCards?.filter(card => 
+      card.type === 'TASK' && card.status === 'CLOSED'
+    ).length || 0;
+    const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
     return {
       project: {
         ...project,
-        createdAt: project.createdAt.toISOString(),
         lastActivityAt: project.lastActivityAt.toISOString(),
-        contextCards: project.contextCards.map(card => ({
-          ...card,
-          createdAt: card.createdAt.toISOString(),
-          updatedAt: card.updatedAt.toISOString(),
-        })),
-        activities: project.activities.map(activity => ({
+        activities: activities.map(activity => ({
           ...activity,
           createdAt: activity.createdAt.toISOString(),
         })),
-      } as unknown as ProjectPageProject,
+        stats: {
+          totalTasks,
+          completedTasks,
+          progress: Math.round(progress),
+        },
+      } as unknown as ProjectData,
       team: {
-        ...project.team,
-        createdAt: project.team.createdAt.toISOString(),
+        id: project.team.id,
+        name: project.team.name,
+        slug: project.team.slug,
         members: project.team.members.map(member => ({
           ...member,
           joinedAt: member.joinedAt.toISOString(),
         })),
-      } as unknown as ProjectPageTeam,
+      } as unknown as TeamWithRelations,
     };
   } catch (error) {
     console.error('Error fetching project data:', error);

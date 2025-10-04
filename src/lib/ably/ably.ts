@@ -94,5 +94,4 @@ export function getAblyServer(): Ably.Rest {
 export { channelsConfig as CHANNELS } from '@/config/channels';
 
 // Re-export from interfaces for backwards compatibility
-export type { AblyPresenceData } from '@/interfaces/AblyPresenceData';
-export type { AblyStatusData } from '@/interfaces/AblyStatusData';
+export type { AblyPresenceData, AblyStatusData } from '@/interfaces/ably';

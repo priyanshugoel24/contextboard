@@ -9,7 +9,7 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
-import { TopContributorsChartProps } from '@/interfaces/TopContributorsChartProps';
+import { TopContributorsChartProps } from '@/interfaces/ui-components';
 
 export default function TopContributorsChart({ data }: TopContributorsChartProps) {
   return (

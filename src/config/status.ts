@@ -1,4 +1,4 @@
-import { UserStatus } from "@/interfaces/UserStatus";
+import { UserStatus } from "@/interfaces/common";
 
 export const statusConfig = {
   options: [

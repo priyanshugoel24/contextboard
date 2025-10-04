@@ -16,7 +16,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { ProjectAnalyticsPageClientProps } from '@/interfaces/ProjectAnalyticsPageClientProps';
+import { ProjectAnalyticsPageClientProps } from '@/interfaces/ui-components';
 import { ANALYTICS_CHART_COLORS } from '@/config/charts';
 
 export default function ProjectAnalyticsPageClient({ analytics }: ProjectAnalyticsPageClientProps) {
@@ -46,7 +46,7 @@ export default function ProjectAnalyticsPageClient({ analytics }: ProjectAnalyti
             <BackButton label="Back to Project" />
             <div>
               <h1 className="text-3xl font-bold">Project Analytics</h1>
-              <p className="text-muted-foreground">{analytics.project.name}</p>
+              <p className="text-muted-foreground">Comprehensive project insights</p>
             </div>
           </div>
           <Badge variant="secondary" className="text-sm">
@@ -65,7 +65,7 @@ export default function ProjectAnalyticsPageClient({ analytics }: ProjectAnalyti
             <CardContent>
               <div className="text-2xl font-bold">{analytics.totalCards}</div>
               <p className="text-xs text-muted-foreground">
-                {analytics.activeCards} active, {analytics.archivedCards} archived
+                {analytics.totalTasks} tasks, {analytics.completedTasks} completed
               </p>
             </CardContent>
           </Card>
@@ -199,17 +199,17 @@ export default function ProjectAnalyticsPageClient({ analytics }: ProjectAnalyti
             <CardContent>
               <div className="space-y-4">
                 {analytics.topContributors.map((contributor, index: number) => (
-                  <div key={contributor.id} className="flex items-center justify-between">
+                  <div key={contributor.userId} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                         <span className="text-sm font-medium">{index + 1}</span>
                       </div>
                       <div>
-                        <p className="font-medium">{contributor.name || contributor.email}</p>
-                        <p className="text-sm text-muted-foreground">{contributor.cardCount} cards</p>
+                        <p className="font-medium">{contributor.userName}</p>
+                        <p className="text-sm text-muted-foreground">{contributor.cardsCreated} cards</p>
                       </div>
                     </div>
-                    <Badge variant="secondary">{contributor.cardCount}</Badge>
+                    <Badge variant="secondary">{contributor.cardsCreated}</Badge>
                   </div>
                 ))}
               </div>

@@ -27,6 +27,30 @@ export const createSlug = (str: string): string => {
 };
 
 /**
+ * Generate a unique slug by appending a number if needed
+ */
+export const createUniqueSlug = (
+  baseSlug: string,
+  existingSlugs: string[] = []
+): string => {
+  let slug = baseSlug;
+  let counter = 1;
+
+  // If the base slug is already unique, return it
+  if (!existingSlugs.includes(slug)) {
+    return slug;
+  }
+
+  // Keep trying with incremented numbers until we find a unique slug
+  while (existingSlugs.includes(slug)) {
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+
+  return slug;
+};
+
+/**
  * Truncate string with ellipsis
  */
 export const truncate = (str: string, maxLength: number): string => {

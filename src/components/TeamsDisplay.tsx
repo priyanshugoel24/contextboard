@@ -4,15 +4,15 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, FolderOpen } from 'lucide-react';
-import { TeamWithRelations } from '@/interfaces/TeamWithRelations';
-import { TeamsDisplayProps } from '@/interfaces/TeamsDisplayProps';
+import { TeamWithRelations } from '@/interfaces/teams';
+import { TeamsDisplayProps } from '@/interfaces/ui-components';
 import { CreateTeamModal } from './modals';
 import PendingInvitations from './PendingInvitations';
-import axios from 'axios';
+import { TeamService } from '@/services';
 
 export default function TeamsDisplay({ initialTeams }: TeamsDisplayProps) {
   const router = useRouter();
-  const [teams, setTeams] = useState<TeamWithRelations[]>(initialTeams);
+  const [teams, setTeams] = useState<TeamWithRelations[]>(initialTeams || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,8 +21,8 @@ export default function TeamsDisplay({ initialTeams }: TeamsDisplayProps) {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('/api/teams');
-      setTeams(response.data || []);
+      const data = await TeamService.getAllTeams();
+      setTeams(data || []);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error && 'response' in error && 
         typeof error.response === 'object' && error.response !== null

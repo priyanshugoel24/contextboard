@@ -20,10 +20,10 @@ import {
   StopCircle,
   Settings
 } from 'lucide-react';
-import { ContextCardWithRelations } from '@/interfaces/ContextCardWithRelations';
-import { TeamHackathon } from '@/interfaces/TeamHackathon';
-import { HackathonUpdate } from '@/interfaces/HackathonUpdate';
-import { HackathonPageClientProps } from '@/interfaces/HackathonPageClientProps';
+import { ContextCardWithRelations } from '@/interfaces/context-cards';
+import { TeamHackathon } from '@/interfaces/teams';
+import { HackathonUpdate } from '@/interfaces/activities';
+import { HackathonPageClientProps } from '@/interfaces/ui-components';
 import { toast } from 'sonner';
 import { ErrorBoundary } from '@/components';
 
@@ -253,7 +253,7 @@ export default function HackathonPageClient({
 
   return (
     <ErrorBoundary
-      onError={(error, errorInfo) => {
+      onError={(error: Error, errorInfo: React.ErrorInfo) => {
         console.error('Hackathon Page Error:', error, errorInfo);
       }}
       fallback={

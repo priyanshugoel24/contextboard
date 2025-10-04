@@ -1,5 +1,5 @@
 // Form component prop interfaces
-import { ExistingCard } from './ExistingCard';
+import { ExistingCard } from './context-cards';
 
 export interface ProjectFormProps {
   teamId?: string;
@@ -29,7 +29,7 @@ export interface CommentFormProps {
 }
 
 export interface ContextCardFormProps {
-  projectId: string;
+  projectSlug: string;
   existingCard?: ExistingCard & { 
     createdById?: string;
     why?: string | null;

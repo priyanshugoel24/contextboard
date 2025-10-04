@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { prisma } from "@/lib/prisma";
-import { generateSlug, generateUniqueSlug } from "@/lib/slugUtil";
+import { createSlug, createUniqueSlug } from "@/utils/string";
 import { logActivity } from "@/lib/logActivity";
 import { getAblyServer } from "@/lib/ably/ably";
-import { isActiveTeamMember } from "@/lib/db-queries";
+import { isActiveTeamMember } from "@/queries/db-queries";
 
 // CREATE new project
 export async function POST(req: NextRequest) {
@@ -27,12 +27,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate a unique slug for the project
-    const baseSlug = generateSlug(name); 
+    const baseSlug = createSlug(name); 
     const existingProjects = await prisma.project.findMany({
       select: { slug: true }
     });
     const existingSlugs = existingProjects.map(p => p.slug);
-    const uniqueSlug = generateUniqueSlug(baseSlug, existingSlugs);
+    const uniqueSlug = createUniqueSlug(baseSlug, existingSlugs);
 
     const project = await prisma.project.create({
       data: {

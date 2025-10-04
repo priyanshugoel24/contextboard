@@ -4,8 +4,8 @@ import { useSession } from "next-auth/react";
 import { getAblyClient } from "@/lib/ably/ably";
 import { channelsConfig } from '@/config/channels';
 import type Ably from 'ably';
-import { CardUpdate } from "@/interfaces/CardUpdate";
-import { ActivityUpdate } from "@/interfaces/ActivityUpdate";
+import { CardUpdate } from "@/interfaces/context-cards";
+import { ActivityUpdate } from "@/interfaces/activities";
 
 export function useProjectRealtime(
   projectId: string | null,

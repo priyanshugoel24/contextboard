@@ -17,7 +17,7 @@ const eslintConfig = [
       "@typescript-eslint/no-unused-vars": "error",
       "@typescript-eslint/ban-ts-comment": "error",
       "react/no-unescaped-entities": "error",
-      "react-hooks/exhaustive-deps": "error", // Upgraded from warn to error
+      "react-hooks/exhaustive-deps": "error", 
       "@next/next/no-img-element": "error",
     },
   },

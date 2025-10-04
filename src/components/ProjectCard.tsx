@@ -8,10 +8,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/slugUtil";
+import { cn } from "@/utils/ui";
 import { Folder, Calendar, Archive } from "lucide-react";
-import { ProjectCardData } from "@/interfaces/ProjectCardData";
-import axios from "axios";
+import { ProjectCardData } from "@/interfaces/projects";
+import { ProjectService } from "@/services";
 
 export default function ProjectCardGrid({ onRefreshNeeded }: { 
   onRefreshNeeded?: (refreshFn: () => void) => void;
@@ -32,14 +32,15 @@ export default function ProjectCardGrid({ onRefreshNeeded }: {
   }, [router]);
 
   const fetchProjects = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await axios.get("/api/projects?includeArchived=true");
-      setAllProjects(res.data.projects || []);
+      const data = await ProjectService.getAllProjects(true);
+      setAllProjects(data.projects || []);
       // Filter out archived projects
-      const filteredProjects = res.data.projects?.filter((project: ProjectCardData) => 
+      const filteredProjects = data.projects?.filter((project: ProjectCardData) => 
         showArchived ? true : !project.isArchived
-      ) || [];
-      setProjects(filteredProjects);
+      );
+      setProjects(filteredProjects || []);
     } catch (error) {
       console.error("Error fetching projects:", error);
     } finally {

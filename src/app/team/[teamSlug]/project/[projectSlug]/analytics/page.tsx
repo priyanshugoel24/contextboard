@@ -32,10 +32,11 @@ import {
   Timer,
 } from 'lucide-react';
 import { Session } from 'next-auth';
-import { prisma } from '@/lib/prisma';
-import { AnalyticsPageProps } from '@/interfaces/AnalyticsPageProps';
+import { AnalyticsPageProps } from '@/interfaces/ui-components';
 import { analyticsConfig } from '@/config/analytics';
 import { getAuthenticatedUserFromSession } from '@/lib/auth-utils';
+import { findUserAccessibleProject } from '@/queries/project-queries';
+import { getProjectAnalyticsWithAccess } from '@/queries/analytics-queries';
 
 // Server-side data fetching for project analytics
 async function fetchProjectAnalytics(teamSlug: string, projectSlug: string) {
@@ -48,99 +49,10 @@ async function fetchProjectAnalytics(teamSlug: string, projectSlug: string) {
       return null;
     }
 
-    const project = await prisma.project.findUnique({
-      where: { slug: projectSlug },
-      include: {
-        team: {
-          include: {
-            members: {
-              where: { status: 'ACTIVE' },
-            },
-          },
-        },
-        contextCards: {
-          include: {
-            user: true,
-          },
-        },
-      },
-    });
-
-    if (!project || !project.team || project.team.slug !== teamSlug) {
-      return null;
-    }
-
-    // Check if user is a member of this team
-    const userMembership = project.team.members.find(
-      (member) => member.userId === user.id
-    );
-
-    if (!userMembership) {
-      return null;
-    }
-
-    // Calculate comprehensive analytics
-    const cards = project.contextCards;
-    const totalCards = cards.length;
-    const totalTasks = cards.filter(c => c.type === 'TASK').length;
-    const completedTasks = cards.filter(c => c.type === 'TASK' && c.status === 'CLOSED').length;
-    const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-    // Card type distribution
-    const cardTypeDistribution = {
-      TASK: cards.filter(c => c.type === 'TASK').length,
-      INSIGHT: cards.filter(c => c.type === 'INSIGHT').length,
-      DECISION: cards.filter(c => c.type === 'DECISION').length,
-    };
-
-    // Task status overview
-    const taskStatusOverview = {
-      ACTIVE: cards.filter(c => c.type === 'TASK' && c.status === 'ACTIVE').length,
-      CLOSED: cards.filter(c => c.type === 'TASK' && c.status === 'CLOSED').length,
-    };
-
-    // Visibility distribution
-    const visibilityDistribution = {
-      PRIVATE: cards.filter(c => c.visibility === 'PRIVATE').length,
-      PUBLIC: cards.filter(c => c.visibility === 'PUBLIC').length,
-    };
-
-    // Top contributors
-    const contributors = cards.reduce((acc, card) => {
-      const userId = card.user.id;
-      const userName = card.user.name || card.user.email || 'Unknown';
-      if (!acc[userId]) {
-        acc[userId] = { userId, userName, cardsCreated: 0, cardsCompleted: 0 };
-      }
-      acc[userId].cardsCreated += 1;
-      if (card.status === 'CLOSED') {
-        acc[userId].cardsCompleted += 1;
-      }
-      return acc;
-    }, {} as Record<string, { userId: string; userName: string; cardsCreated: number; cardsCompleted: number; }>);
-
-    const topContributors = Object.values(contributors)
-      .sort((a, b) => b.cardsCreated - a.cardsCreated)
-      .slice(0, 5);
-
-    // Weekly velocity (simplified)
-    const weeklyVelocity = Array.from({ length: 8 }, (_, i) => ({
-      week: `Week ${i + 1}`,
-      completed: Math.floor(Math.random() * 5), // Placeholder data
-      created: Math.floor(Math.random() * 8),
-    }));
-
-    return {
-      totalCards,
-      totalTasks,
-      completedTasks,
-      taskCompletionRate,
-      cardTypeDistribution,
-      taskStatusOverview,
-      visibilityDistribution,
-      topContributors,
-      weeklyVelocity,
-    };
+    // Use the analytics query with built-in access control
+    const analytics = await getProjectAnalyticsWithAccess(user.id, teamSlug, projectSlug);
+    
+    return analytics;
   } catch (error) {
     console.error('Error fetching project analytics:', error);
     return null;
@@ -151,26 +63,15 @@ async function fetchProjectAnalytics(teamSlug: string, projectSlug: string) {
 async function fetchProject(teamSlug: string, projectSlug: string) {
   try {
     const session = await getServerSession(authOptions) as Session | null;
-    if (!session?.user?.email) {
+    
+    // Get authenticated user
+    const user = await getAuthenticatedUserFromSession(session);
+    if (!user) {
       return null;
     }
 
-    // First, ensure the user exists in the database and get the actual user
-    const user = await prisma.user.upsert({
-      where: { email: session.user.email },
-      update: {
-        name: session.user.name,
-        image: session.user.image,
-      },
-      create: {
-        email: session.user.email,
-        name: session.user.name,
-        image: session.user.image,
-      },
-    });
-
-    const project = await prisma.project.findUnique({
-      where: { slug: projectSlug },
+    //get project with relations
+    const project = await findUserAccessibleProject(projectSlug, user.id, {
       include: {
         team: {
           include: {
@@ -351,8 +252,8 @@ export default async function ProjectAnalyticsPage({ params }: AnalyticsPageProp
                     <Suspense fallback={<ComponentLoadingSpinner text="Loading card distribution..." />}>
                       <CardTypeDistributionChart data={Object.entries(analytics.cardTypeDistribution).map(([type, count]) => ({
                         type,
-                        count,
-                        percentage: analytics.totalCards > 0 ? Math.round((count / analytics.totalCards) * 100) : 0,
+                        count: count as number,
+                        percentage: analytics.totalCards > 0 ? Math.round((count as number / analytics.totalCards) * 100) : 0,
                       }))} />
                     </Suspense>
                   </div>
@@ -367,9 +268,9 @@ export default async function ProjectAnalyticsPage({ params }: AnalyticsPageProp
                           <span className="text-sm font-medium">{type}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline">{count}</Badge>
+                          <Badge variant="outline">{count as number}</Badge>
                           <span className="text-xs text-muted-foreground">
-                            {analytics.totalCards > 0 ? Math.round((count / analytics.totalCards) * 100) : 0}%
+                            {analytics.totalCards > 0 ? Math.round((count as number / analytics.totalCards) * 100) : 0}%
                           </span>
                         </div>
                       </div>

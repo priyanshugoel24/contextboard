@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       
       const statusData: AblyStatusData = {
         userId: user.id,
-        state,
+        status: state,
         timestamp: new Date().toISOString(),
       };
 

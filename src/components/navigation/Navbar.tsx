@@ -6,7 +6,7 @@ import { usePresenceStore } from "@/lib/store";
 import { useAblyPresence } from "@/lib/ably/useAblyPresence";
 import { ThemeToggle } from "../ThemeToggle";
 import { SearchBar } from "@/components";
-import { UserStatus } from "@/interfaces/UserStatus";
+import { UserStatus } from "@/interfaces/common";
 import { ErrorBoundary } from '@/components';
 import Image from 'next/image';
 

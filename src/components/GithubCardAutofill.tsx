@@ -4,8 +4,8 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Upload } from "lucide-react";
-import axios from "axios";
-import { GitHubCardAutoFillProps } from "@/interfaces/GitHubCardAutoFillProps";
+import { GitHubService } from "@/services";
+import { GitHubCardAutoFillProps } from "@/interfaces/ui-components";
 
 export function GitHubCardAutoFill({ onAutoFill }: GitHubCardAutoFillProps) {
   const [url, setUrl] = useState("");
@@ -17,13 +17,12 @@ export function GitHubCardAutoFill({ onAutoFill }: GitHubCardAutoFillProps) {
     setIsLoading(true);
 
     try {
-      const res = await axios.post("/api/github-metadata", { url });
-      const data = res.data;
+      const data = await GitHubService.getMetadata(url);
 
-      onAutoFill(
-        data.title,
-        `${data.body ?? ""}\n\n🔗 [View on GitHub](${data.url})`
-      );
+      onAutoFill({
+        title: data.title,
+        content: `${data.body ?? ""}\n\n🔗 [View on GitHub](${data.url})`
+      });
 
       toast.success("GitHub issue imported");
     } catch {

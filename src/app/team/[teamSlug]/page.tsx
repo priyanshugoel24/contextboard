@@ -3,12 +3,14 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { Navbar } from '@/components';
 import { TeamPageClient } from '@/components/client';
-import { TeamPageTeam } from '@/interfaces/TeamPageTeam';
-import { TeamPageProps } from '@/interfaces/TeamPageProps';
+import { TeamPageTeam, TeamWithRelations } from '@/interfaces/teams';
+import { TeamPageProps } from '@/interfaces/ui-components';
 import { Session } from 'next-auth';
 import { Metadata } from 'next';
 import { getAuthenticatedUserFromSession } from '@/lib/auth-utils';
-import { prisma } from '@/lib/prisma';
+import { findTeamBySlugWithRelations, getUserTeamMembership } from '@/queries/team-queries';
+import { findTeamActivities } from '@/queries/activity-queries';
+import { getProjectStatistics } from '@/queries/project-queries';
 
 export async function generateMetadata({ params }: TeamPageProps): Promise<Metadata> {
   const { teamSlug } = await params;
@@ -23,19 +25,7 @@ export async function generateMetadata({ params }: TeamPageProps): Promise<Metad
     }
 
     // Get team data for metadata
-    const team = await prisma.team.findUnique({
-      where: { slug: teamSlug },
-      select: {
-        name: true,
-        description: true,
-        _count: {
-          select: {
-            members: true,
-            projects: true,
-          },
-        },
-      },
-    });
+    const team = await findTeamBySlugWithRelations(teamSlug);
 
     if (!team) {
       return {
@@ -88,57 +78,14 @@ async function fetchTeam(teamSlug: string): Promise<TeamPageTeam | null> {
       return null;
     }
 
-    const team = await prisma.team.findUnique({
-      where: { slug: teamSlug },
-      include: {
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-              },
-            },
-          },
-          where: { status: 'ACTIVE' },
-        },
-        projects: {
-          include: {
-            _count: {
-              select: {
-                contextCards: {
-                  where: {
-                    type: 'TASK',
-                    isArchived: false,
-                  },
-                },
-              },
-            },
-          },
-          where: { isArchived: false },
-        },
-        _count: {
-          select: {
-            members: {
-              where: { status: 'ACTIVE' }
-            },
-            projects: true,
-          },
-        },
-      },
-    });
-
+    // Get team with relations
+    const team = await findTeamBySlugWithRelations(teamSlug);
     if (!team) {
       return null;
     }
 
-    // Check if user is a member of this team
-    const userMembership = team.members.find(
-      (member) => member.user.id === user.id
-    );
-
+    // Check if user is a member of this
+    const userMembership = await getUserTeamMembership(user.id, teamSlug);
     if (!userMembership) {
       return null;
     }
@@ -146,74 +93,22 @@ async function fetchTeam(teamSlug: string): Promise<TeamPageTeam | null> {
     // Calculate task completion stats for each project
     const projectsWithStats = await Promise.all(
       team.projects.map(async (project) => {
-        const taskStats = await prisma.contextCard.aggregate({
-          where: {
-            projectId: project.id,
-            type: 'TASK',
-            isArchived: false,
-          },
-          _count: {
-            id: true,
-          },
-        });
-
-        const completedTaskStats = await prisma.contextCard.aggregate({
-          where: {
-            projectId: project.id,
-            type: 'TASK',
-            status: 'CLOSED',
-            isArchived: false,
-          },
-          _count: {
-            id: true,
-          },
-        });
-
-        const totalTasks = taskStats._count.id;
-        const completedTasks = completedTaskStats._count.id;
-        const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+        // Get project statistics
+        const stats = await getProjectStatistics(project.id);
 
         return {
           ...project,
           createdAt: project.createdAt.toISOString(),
           lastActivityAt: project.lastActivityAt.toISOString(),
-          stats: {
-            totalTasks,
-            completedTasks,
-            progress: Math.round(progress),
-          },
+          stats,
         };
       })
     );
 
-    // Fetch team activities (both project-level and team-level)
-    const activities = await prisma.activity.findMany({
-      where: { 
-        OR: [
-          {
-            project: {
-              teamId: team.id,
-              isArchived: false,
-            }
-          },
-          {
-            teamId: team.id
-          }
-        ]
-      },
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: {
-          select: { id: true, name: true, image: true },
-        },
-        project: {
-          select: { id: true, name: true, slug: true },
-        },
-        team: {
-          select: { id: true, name: true, slug: true },
-        },
-      },
-      take: 100, // Show more activities for team view
+    // Get team activities
+    const activities = await findTeamActivities([team.id], {
+      includeProjects: true,
+      take: 100,
     });
 
     return {
@@ -226,7 +121,7 @@ async function fetchTeam(teamSlug: string): Promise<TeamPageTeam | null> {
         ...activity,
         createdAt: activity.createdAt.toISOString(),
       })),
-    } as TeamPageTeam;
+    } as unknown as TeamPageTeam;
   } catch (error) {
     console.error('Error fetching team:', error);
     return null;
@@ -257,5 +152,5 @@ export default async function TeamPage({ params }: TeamPageProps) {
     );
   }
 
-  return <TeamPageClient initialTeam={team} teamSlug={teamSlug} />;
+  return <TeamPageClient initialTeam={team as unknown as TeamWithRelations} teamSlug={teamSlug} />;
 }

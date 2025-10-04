@@ -1,14 +1,21 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useDebounce } from "@/hooks";
 import { paginationConfig } from '@/config/pagination';
 import { FileText, Folder, User, Tag, Search, Loader2, X, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/slugUtil";
-import axios from "axios";
-import { SearchResult } from "@/interfaces/SearchResult";
+import { cn } from "@/utils/ui";
+import { SearchService } from "@/services";
+import { SearchResult } from "@/services/search.service";
 
-import { AIMetadata } from "@/interfaces/AITypes";
+interface AIMetadata {
+  scope: string;
+  teamsAnalyzed?: number;
+  projectsAnalyzed: number;
+  cardsAnalyzed: number;
+  relevantProjects?: unknown[];
+  relevantTeams?: unknown[];
+}
 
 export default function SearchBar() {
   const [query, setQuery] = useState("");
@@ -69,12 +76,12 @@ export default function SearchBar() {
     
     try {
       if (isAIEnabled) {
-        const res = await axios.post(`/api/assistant`, { prompt: query });
-        setAIResponse(res.data.answer || "No response.");
-        setAIMetadata(res.data.metadata || null);
+        const aiResponse = await SearchService.askAI(query);
+        setAIResponse(aiResponse.answer);
+        setAIMetadata(aiResponse.metadata as unknown as AIMetadata || null);
       } else {
-        const res = await axios.get(`/api/search?q=${encodeURIComponent(query)}`);
-        setResults(res.data.results || []);
+        const searchResponse = await SearchService.search(query);
+        setResults(searchResponse.results || []);
       }
     } catch (error: unknown) {
       console.error("Search/AI failed:", error);
@@ -173,8 +180,8 @@ export default function SearchBar() {
         setAIMetadata(null);
         setSubmitted(false);
         try {
-          const res = await axios.get(`/api/search?q=${encodeURIComponent(debounced)}`);
-          setResults(res.data.results || []);
+          const searchResponse = await SearchService.search(debounced);
+          setResults(searchResponse.results || []);
         } catch (error: unknown) {
           console.error("Search failed:", error);
           const errorMessage = error instanceof Error && 'response' in error && 
@@ -520,13 +527,13 @@ export default function SearchBar() {
                       Relevant projects identified:
                     </div>
                     <div className="flex flex-wrap gap-1">
-                      {aiMetadata.relevantProjects.map((project, index: number) => (
+                      {aiMetadata.relevantProjects.map((project: unknown, index: number) => (
                         <span
                           key={index}
                           className="text-xs bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-md"
-                          title={`${project.reason || 'Relevant project'} (Score: ${project.score?.toFixed(2) || 'N/A'})`}
+                          title={`${(project as { reason?: string; score?: number }).reason || 'Relevant project'} (Score: ${(project as { reason?: string; score?: number }).score?.toFixed(2) || 'N/A'})`}
                         >
-                          {project.name}
+                          {(project as { name: string }).name}
                         </span>
                       ))}
                     </div>
@@ -538,13 +545,13 @@ export default function SearchBar() {
                       Relevant teams identified:
                     </div>
                     <div className="flex flex-wrap gap-1">
-                      {aiMetadata.relevantTeams.map((team, index: number) => (
+                      {aiMetadata.relevantTeams.map((team: unknown, index: number) => (
                         <span
                           key={index}
                           className="text-xs bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-md"
-                          title={`${team.reason || 'Relevant team'} (Score: ${team.score?.toFixed(2) || 'N/A'})`}
+                          title={`${(team as { reason?: string; score?: number }).reason || 'Relevant team'} (Score: ${(team as { reason?: string; score?: number }).score?.toFixed(2) || 'N/A'})`}
                         >
-                          {team.name}
+                          {(team as { name: string }).name}
                         </span>
                       ))}
                     </div>

@@ -14,8 +14,8 @@ import {
 } from "@/lib/security";
 import { 
   createUserCardAccessWhere
-} from '@/lib/card-queries';
-import { findUserAccessibleProject } from '@/lib/project-queries';// Rate limiter: 60 requests per minute per user (increased from 20)
+} from '@/queries/card-queries';
+import { findUserAccessibleProject } from '@/queries/project-queries';// Rate limiter: 60 requests per minute per user (increased from 20)
 const rateLimiter = createRateLimiter(60 * 1000, 60);
 
 // GET all context cards for logged-in user

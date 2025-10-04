@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { TeamWithRelations } from '@/interfaces/TeamWithRelations';
+import { TeamWithRelations } from '@/interfaces/teams';
 
 /**
  * Fetches all teams for a user by their user ID

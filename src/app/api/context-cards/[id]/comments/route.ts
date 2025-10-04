@@ -3,7 +3,7 @@ import { logActivity } from "@/lib/logActivity";
 import { getAuthenticatedUser } from "@/lib/auth-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { getAblyServer } from "@/lib/ably/ably";
-import { findUserAccessibleCard } from '@/lib/card-queries';
+import { findUserAccessibleCard } from '@/queries/card-queries';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

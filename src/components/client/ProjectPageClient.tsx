@@ -17,8 +17,9 @@ import {
   UserRound,
   BarChart3,
 } from "lucide-react";
-import { ProjectWithRelations } from '@/interfaces/ProjectWithRelations';
-import { ProjectPageClientProps } from '@/interfaces/ProjectPageClientProps';
+import { ProjectPageClientProps } from '@/interfaces/ui-components';
+import { ContextCardWithRelations } from '@/interfaces/context-cards';
+import { ActivityWithRelations } from '@/interfaces/activities';
 
 export default function ProjectPageClient({ 
   project, 
@@ -106,7 +107,7 @@ export default function ProjectPageClient({
               <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center space-x-1">
                   <Calendar className="h-4 w-4" />
-                  <span>Updated {formatDate(project.lastActivityAt)}</span>
+                  <span>Updated {project.lastActivityAt ? formatDate(project.lastActivityAt) : formatDate(project.updatedAt)}</span>
                 </div>
               </div>
 
@@ -150,10 +151,9 @@ export default function ProjectPageClient({
           {/* Context Cards */}
           <div className="lg:col-span-3">
             <ContextCardList 
-              projectSlug={projectSlug} 
-              initialCards={project.contextCards || []}
-              project={project as unknown as ProjectWithRelations}
-              teamSlug={teamSlug}
+              projectSlug={projectSlug}
+              initialCards={project.contextCards as unknown as ContextCardWithRelations[] || []}
+              project={project}
             />
           </div>
 
@@ -167,7 +167,7 @@ export default function ProjectPageClient({
               </h3>
               <ActivityFeed 
                 projectId={project.id} 
-                initialActivities={project.activities || []}
+                initialActivities={project.activities as unknown as ActivityWithRelations[] || []}
               />
             </div>
 

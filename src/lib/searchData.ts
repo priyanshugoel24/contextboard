@@ -1,4 +1,3 @@
-// lib/searchData.ts
 import { prisma } from "@/lib/prisma";
 import { CardResult, ProjectResult, TeamResult } from "@/interfaces/SearchLibTypes";
 

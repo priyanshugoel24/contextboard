@@ -1,6 +1,5 @@
-// lib/logActivity.ts
 import { prisma } from "./prisma";
-import { ActivityMetadata, ActivityType } from "@/interfaces/ActivityTypes";
+import { ActivityMetadata, ActivityType } from "@/interfaces/activities";
 
 export async function logActivity({
   type,

@@ -2,9 +2,9 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/lib/logActivity';
-import { TaskStatus } from '@/interfaces/TaskStatus';
+import { TaskStatus } from '@/interfaces/common';
 import { getAuthenticatedUserFromSession } from '@/lib/auth-utils';
-import { findCardWithModifyAccess } from '@/lib/db-queries';
+import { findCardWithModifyAccess } from '@/queries/db-queries';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { ContextCard } from '@prisma/client';
@@ -15,7 +15,7 @@ import {
   validateFileUpload,
   sanitizeHtml as serverSanitizeHtml
 } from '@/lib/security';
-import { uploadFileToSupabase } from '@/services/contextCardService';
+import { ContextCardService } from '@/services/contextCard.service';
 import { gemini } from "@/lib/gemini";
 
 // Helper function to validate project access
@@ -302,7 +302,7 @@ export async function createContextCard(formData: FormData) {
     // Extract and sanitize form data
     const title = sanitizeText(formData.get('title') as string);
     const content = serverSanitizeHtml(formData.get('content') as string);
-    const projectId = formData.get('projectId') as string;
+    const projectSlug = formData.get('projectSlug') as string;
     const type = formData.get('type') as 'TASK' | 'INSIGHT' | 'DECISION';
     const visibility = formData.get('visibility') as 'PRIVATE' | 'PUBLIC';
     const status = formData.get('status') as TaskStatus || 'ACTIVE';
@@ -311,7 +311,7 @@ export async function createContextCard(formData: FormData) {
     const assignedToId = formData.get('assignedToId') as string | null;
 
     // Validate project access first
-    const project = await validateProjectAccess(projectId, user.id);
+    const project = await validateProjectAccess(projectSlug, user.id);
 
     // Validate input
     const validationResult = validateInput(contextCardSchema, {
@@ -321,7 +321,7 @@ export async function createContextCard(formData: FormData) {
       visibility,
       why,
       issues,
-      projectId
+      projectId: project.id  // Use the resolved project ID for validation
     });
 
     if (!validationResult.isValid) {
@@ -339,7 +339,7 @@ export async function createContextCard(formData: FormData) {
           throw new Error(`File "${file.name}" rejected: ${validation.error}`);
         }
         
-        const url = await uploadFileToSupabase(file);
+        const url = await ContextCardService.uploadFileToSupabase(file);
         if (url) uploadedUrls.push(url);
       }
     }
@@ -392,7 +392,7 @@ export async function createContextCard(formData: FormData) {
       description: `Created ${type.toLowerCase()} card "${title}"`,
       metadata: { cardId: contextCard.id, type, visibility },
       userId: user.id,
-      projectId,
+      projectId: project.id,
     });
 
     // Revalidate paths
@@ -464,7 +464,7 @@ export async function updateContextCard(cardId: string, formData: FormData) {
           throw new Error(`File "${file.name}" rejected: ${validation.error}`);
         }
         
-        const url = await uploadFileToSupabase(file);
+        const url = await ContextCardService.uploadFileToSupabase(file);
         if (url) uploadedUrls.push(url);
       }
     }

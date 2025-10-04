@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import dynamic from 'next/dynamic';
 import { authOptions } from '@/lib/auth';
 import { Card, CardContent } from '@/components/ui/card';
-import { AssignedCardsTeam } from '@/interfaces/AssignedCardsTeam';
+import { AssignedCardsTeam } from '@/interfaces/teams';
 import { Session } from 'next-auth';
 import { getAuthenticatedUserFromSession } from '@/lib/auth-utils';
 import { fetchTeamBySlug } from '@/lib/teams-utils';
@@ -17,7 +17,7 @@ const AssignedCardsPageClient = dynamic(() => import('@/components/client/Assign
   )
 });
 
-import { AssignedCardsPageProps } from '@/interfaces/AssignedCardsPageProps';
+import { AssignedCardsPageProps } from '@/interfaces/ui-components';
 
 // Server-side data fetching using auth and teams utilities
 async function fetchTeam(teamSlug: string): Promise<AssignedCardsTeam | null> {

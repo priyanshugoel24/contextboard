@@ -7,7 +7,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { analyticsConfig } from '@/config/analytics';
-import { CardTypeDistributionChartProps } from '@/interfaces/CardTypeDistributionChartProps';
+import { CardTypeDistributionChartProps } from '@/interfaces/ui-components';
 
 export default function CardTypeDistributionChart({ data }: CardTypeDistributionChartProps) {
   return (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { TeamService } from '@/services';
-import { TeamWithRelations } from '@/interfaces/TeamWithRelations';
+import { TeamWithRelations } from '@/interfaces/teams';
 import { getAblyClient } from '@/lib/ably/ably';
 import { toast } from 'sonner';
 import type { InboundMessage } from 'ably';

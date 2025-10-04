@@ -2,7 +2,7 @@
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { getAuthenticatedUserFromSession } from '@/lib/auth-utils';
-import { getUserTeamMembership, findProjectWithOwnerAccess } from '@/lib/db-queries';
+import { getUserTeamMembership, findProjectWithOwnerAccess } from '@/queries/db-queries';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 

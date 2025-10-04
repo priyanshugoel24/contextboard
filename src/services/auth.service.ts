@@ -2,7 +2,6 @@ import axios from 'axios';
 
 export class AuthService {
   static async signIn(provider: string, callbackUrl?: string) {
-    // This would integrate with NextAuth
     const response = await axios.post('/api/auth/signin', { provider, callbackUrl });
     return response.data;
   }
